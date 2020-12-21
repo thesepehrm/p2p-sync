@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"crypto/rand"
@@ -54,10 +54,10 @@ func (h *Hash) GenerateRandom() {
 	}
 }
 
-func HashObject(i interface{}) *Hash {
+func HashObject(i interface{}) Hash {
 	serialized := fmt.Sprintf("%v", i)
 	h := Hash(sha3.Sum256([]byte(serialized)))
-	return &h
+	return h
 }
 
 func HashBytes(b []byte) *Hash {
