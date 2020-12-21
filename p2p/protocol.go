@@ -1,4 +1,6 @@
-package main
+package p2p
+
+import "gitlab.com/thesepehrm/p2p-sync/common"
 
 type Message uint8
 
@@ -25,12 +27,12 @@ type StatusPacket struct {
 }
 
 type GetKnownNodesPacket int
-type KnownNodesPacket []string
+type KnownNodesPacket map[common.Hash]string
 
-type NewDataPacket Hash
-type GetDataPacket Hash
+type NewDataPacket common.Hash
+type GetDataPacket common.Hash
 type DataMsgPacket struct {
-	Key   Hash
+	Key   common.Hash
 	Value string
 }
 
