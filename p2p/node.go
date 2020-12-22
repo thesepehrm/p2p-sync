@@ -48,6 +48,8 @@ func NewNode(sourcePort int) *Node {
 		context.Background(),
 		libp2p.ListenAddrs(sourceMultiAddr),
 		libp2p.Identity(privateKey),
+		libp2p.NATPortMap(),
+		libp2p.EnableNATService(),
 	)
 
 	if err != nil {
@@ -71,7 +73,7 @@ func (n *Node) Start() {
 	for _, la := range n.host.Network().ListenAddresses() {
 		if p, err := la.ValueForProtocol(multiaddr.P_TCP); err == nil {
 			port = p
-			break
+			fmt.Printf("Run './chat -d /ip4/127.0.0.1/tcp/%v/p2p/%s' on another console.\n", port, n.host.ID().Pretty())
 		}
 	}
 
@@ -79,7 +81,6 @@ func (n *Node) Start() {
 		panic("was not able to find actual local port")
 	}
 
-	fmt.Printf("Run './chat -d /ip4/127.0.0.1/tcp/%v/p2p/%s' on another console.\n", port, n.host.ID().Pretty())
 	fmt.Println("You can replace 127.0.0.1 with public IP as well.")
 	fmt.Printf("\nWaiting for incoming connection\n\n")
 
