@@ -5,7 +5,7 @@ import "gitlab.com/thesepehrm/p2p-sync/common"
 type Message uint8
 
 const (
-	StatusMsg Message = iota
+	StatusMsg Message = iota + 10
 	PingMsg
 	GetKnownNodesMsg
 	KnownNodesMsg
@@ -14,6 +14,11 @@ const (
 	GetDataMsg
 	DataMsg
 )
+
+type PacketData struct {
+	Msg  Message
+	Data interface{}
+}
 
 type Packet interface {
 	Name() string
@@ -36,11 +41,11 @@ type DataMsgPacket struct {
 	Value string
 }
 
-func (*StatusPacket) Name() string  { return "Status" }
-func (*StatusPacket) Type() Message { return StatusMsg }
+func (StatusPacket) Name() string  { return "Status" }
+func (StatusPacket) Type() Message { return StatusMsg }
 
-func (*PingPacket) Name() string  { return "Ping" }
-func (*PingPacket) Type() Message { return PingMsg }
+func (PingPacket) Name() string  { return "Ping" }
+func (PingPacket) Type() Message { return PingMsg }
 
 func (*GetKnownNodesPacket) Name() string  { return "GetKnownNodes" }
 func (*GetKnownNodesPacket) Type() Message { return GetKnownNodesMsg }
