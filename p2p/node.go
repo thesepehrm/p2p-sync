@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -15,7 +16,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
-	"github.com/mitchellh/mapstructure"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/vmihailenco/msgpack/v5"
 	"gitlab.com/thesepehrm/p2p-sync/common"
@@ -144,16 +144,14 @@ func (n *Node) runConsole() {
 		switch command {
 
 		case "ping":
-			ping := PingPacket(false)
 
-			n.send(ping.Type(), ping)
+			n.send(&PingPacket{false, time.Now().UnixNano()})
 
 		case "status":
-			stat := StatusPacket{
+			n.send(&StatusPacket{
 				NodeAddress:   "Hello",
 				KnownNodesNum: 2,
-			}
-			n.send(stat.Type(), stat)
+			})
 		case "newdata":
 			if len(body) == 0 {
 				fmt.Println("Data cannot be empty")
@@ -172,51 +170,53 @@ func (n *Node) receive() {
 
 	for {
 
-		var packetData PacketData
+		msg, _ := n.rw.ReadByte()
 
 		decoder := msgpack.NewDecoder(n.rw)
-		err := decoder.Decode(&packetData)
-		if err != nil {
-			fmt.Println(err)
-		}
 
-		packet := packetData.Data
-
-		switch packetData.Msg {
+		switch Message(msg) {
 		case PingMsg:
-
-			ping := PingPacket(packet.(bool))
-			if !ping {
-				pongPacket := PingPacket(true)
-				n.send(pongPacket.Type(), pongPacket)
-			}
-			// Green console colour: 	\x1b[32m
-			// Reset console colour: 	\x1b[0m
-			fmt.Printf("\x1b[32m%s\x1b[0m> ", "PONG!")
-			fmt.Println()
-		case StatusMsg:
-			var status StatusPacket
-			err := mapstructure.Decode(packetData.Data, &status)
+			var ping PingPacket
+			err := decoder.Decode(&ping)
 			if err != nil {
 				fmt.Println(err)
-				break
 			}
-			fmt.Println(status)
+
+			pingMs := float64((time.Now().UnixNano() - ping.SentTime)) / 1000000.0
+
+			if !ping.IsReply {
+				n.send(&PingPacket{true, time.Now().UnixNano()})
+
+				fmt.Printf("> \x1b[32m%s\x1b[0m (%.02f ms)\n", "requested ping", pingMs)
+				fmt.Println()
+
+			} else {
+				// Green console colour: 	\x1b[32m
+				// Reset console colour: 	\x1b[0m
+				fmt.Printf("> \x1b[32m%s\x1b[0m (%.02f ms)\n", "pong", pingMs)
+				fmt.Println()
+			}
+
+		case StatusMsg:
+			var statusPacket StatusPacket
+			err := decoder.Decode(&statusPacket)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			fmt.Println(statusPacket)
+
 		}
 
 	}
 }
 
-func (n *Node) send(msgID Message, data interface{}) {
+func (n *Node) send(data Packet) {
+
+	_ = n.rw.WriteByte(byte(data.Type()))
 
 	encoder := msgpack.NewEncoder(n.rw)
-
-	packetData := PacketData{
-		Msg:  msgID,
-		Data: data,
-	}
-
-	err := encoder.Encode(packetData)
+	err := encoder.Encode(data)
 	if err != nil {
 		fmt.Println(err)
 	}
