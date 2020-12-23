@@ -25,7 +25,10 @@ type Packet interface {
 	Type() Message
 }
 
-type PingPacket bool
+type PingPacket struct {
+	IsReply  bool
+	SentTime int64
+}
 type StatusPacket struct {
 	NodeAddress   string
 	KnownNodesNum int
@@ -41,14 +44,14 @@ type DataMsgPacket struct {
 	Value string
 }
 
-func (StatusPacket) Name() string  { return "Status" }
-func (StatusPacket) Type() Message { return StatusMsg }
+func (*StatusPacket) Name() string  { return "Status" }
+func (*StatusPacket) Type() Message { return StatusMsg }
 
-func (PingPacket) Name() string  { return "Ping" }
-func (PingPacket) Type() Message { return PingMsg }
+func (*PingPacket) Name() string  { return "Ping" }
+func (*PingPacket) Type() Message { return PingMsg }
 
-func (*GetKnownNodesPacket) Name() string  { return "GetKnownNodes" }
-func (*GetKnownNodesPacket) Type() Message { return GetKnownNodesMsg }
+func (GetKnownNodesPacket) Name() string  { return "GetKnownNodes" }
+func (GetKnownNodesPacket) Type() Message { return GetKnownNodesMsg }
 
 func (*KnownNodesPacket) Name() string  { return "KnownNodes" }
 func (*KnownNodesPacket) Type() Message { return KnownNodesMsg }
